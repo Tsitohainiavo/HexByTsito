@@ -1,0 +1,7 @@
+joblib 
+mkl-service==2.5.2
+mkl_fft 
+mkl_random 
+numpy 
+scikit-learn 
+scipy 

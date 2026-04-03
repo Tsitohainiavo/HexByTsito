@@ -4,3 +4,8 @@
 *.ptx
 *.cubin
 *.fatbin
+.hex
+venv
+.venv
+*.ipynb_checkpoints
+__pycache__
