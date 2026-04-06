@@ -9,3 +9,15 @@ venv
 .venv
 *.ipynb_checkpoints
 __pycache__
+*.joblib
+*.log
+*.bak
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+*.egg-info
+dist
+build
+*.egg
+*.whl
