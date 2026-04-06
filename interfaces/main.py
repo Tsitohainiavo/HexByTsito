@@ -93,11 +93,9 @@ class HexGame:
         if self.canvas.winfo_width() < 10: return
         self.get_geometry()
 
-        # --- DESSIN DES BORDURES POLYGONALES (LE "PLATEAU") ---
-        self.draw_side_border("top", BLUE_COLOR)
-        self.draw_side_border("bottom", BLUE_COLOR)
-        self.draw_side_border("left", RED_COLOR)
-        self.draw_side_border("right", RED_COLOR)
+        # --- DESSIN DES BORDURES "PEAU" (ULTRA FINES ET CONTINUES) ---
+        self.draw_slim_border("blue")  # Haut et Bas
+        self.draw_slim_border("red")   # Gauche et Droite
 
         # --- DESSIN DES HEXAGONES ---
         for r in range(self.size):
@@ -109,32 +107,121 @@ class HexGame:
                 pts = []
                 for i in range(6):
                     angle = math.radians(60 * i - 30)
-                    pts.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
-                self.canvas.create_polygon(pts, fill=color, outline="#444455", width=1)
+                    pts.extend([x + self.cell_radius * math.cos(angle), 
+                               y + self.cell_radius * math.sin(angle)])
+                
+                # On garde un contour très fin pour les cases aussi
+                self.canvas.create_polygon(pts, fill=color, outline="#3d3d50", width=1)
 
-    def draw_side_border(self, side, color):
-        """Dessine une bande de couleur qui suit les polygones extérieurs."""
-        pts = []
-        thickness = self.cell_radius * 0.3
+    def draw_slim_border(self, color_type):
+        """Trace une ligne continue ultra-fine sur les arêtes extérieures."""
+        color = BLUE_COLOR if color_type == "blue" else RED_COLOR
         
-        for i in range(self.size):
-            r, c = (0, i) if side == "top" else (self.size-1, i) if side == "bottom" else (i, 0) if side == "left" else (i, self.size-1)
-            x, y = self.get_hex_coords(r, c)
+        if color_type == "blue":
+            # Bordure HAUTE
+            pts_top = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(0, i)
+                # On prend les sommets du haut de l'hexagone (index 4, 5, 0)
+                for i_ang in [4, 5, 0]:
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_top.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            self.canvas.create_line(pts_top, fill=color, width=2, capstyle=tk.ROUND, joinstyle=tk.ROUND)
             
-            # On crée un décalage pour la bordure
-            dx = 0; dy = 0
-            if side == "top": dy = -self.cell_radius * 0.9
-            elif side == "bottom": dy = self.cell_radius * 0.9
-            elif side == "left": dx = -self.cell_radius * 0.9
-            elif side == "right": dx = self.cell_radius * 0.9
+            # Bordure BASSE
+            pts_bot = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(self.size-1, i)
+                # On prend les sommets du bas (index 1, 2, 3)
+                for i_ang in [1, 2, 3]:
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_bot.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            self.canvas.create_line(pts_bot, fill=color, width=2, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+
+        else:
+            # Bordure GAUCHE
+            pts_left = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(i, 0)
+                # Sommets de gauche (index 3, 4, 5)
+                for i_ang in [3, 4, 5]:
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_left.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            self.canvas.create_line(pts_left, fill=color, width=2, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+
+            # Bordure DROITE
+            pts_right = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(i, self.size-1)
+                # Sommets de droite (index 0, 1, 2)
+                for i_ang in [0, 1, 2]:
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_right.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            self.canvas.create_line(pts_right, fill=color, width=2, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+
+    def draw_slim_border(self, color_type):
+        """Trace une ligne continue ultra-fine, renforcée pour la visibilité."""
+        # Couleur principale (on la garde vive)
+        color = BLUE_COLOR if color_type == "blue" else RED_COLOR
+        # Couleur de contraste (un gris très clair pour ne pas flasher comme du blanc pur)
+        contrast_color = '#d1d1e0' 
+        
+        # Définition des largeurs (très fines mais avec contraste)
+        base_width = 6    # Ligne de contraste en dessous
+        top_width = 9     # Ligne de couleur au-dessus
+
+        if color_type == "blue":
+            # --- Bordure HAUTE ---
+            pts_top = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(0, i)
+                for i_ang in [4, 5, 0]: # Sommets du haut
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_top.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
             
-            # Dessin d'un petit hexagone de bordure pour l'effet "plein"
-            border_pts = []
-            for j in range(6):
-                angle = math.radians(60 * j - 30)
-                border_pts.extend([x + dx + self.cell_radius * 0.8 * math.cos(angle), 
-                                   y + dy + self.cell_radius * 0.8 * math.sin(angle)])
-            self.canvas.create_polygon(border_pts, fill=color, outline=color)
+            # Double tracé pour le contraste
+            if len(pts_top) > 1:
+                # 1. Fond de contraste
+                self.canvas.create_line(pts_top, fill=contrast_color, width=base_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+                # 2. Ligne de couleur
+                self.canvas.create_line(pts_top, fill=color, width=top_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+            
+            # --- Bordure BASSE ---
+            pts_bot = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(self.size-1, i)
+                for i_ang in [1, 2, 3]: # Sommets du bas
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_bot.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            
+            if len(pts_bot) > 1:
+                self.canvas.create_line(pts_bot, fill=contrast_color, width=base_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+                self.canvas.create_line(pts_bot, fill=color, width=top_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+
+        else:
+            # --- Bordure GAUCHE ---
+            pts_left = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(i, 0)
+                for i_ang in [3, 4, 5]: # Sommets de gauche
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_left.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            
+            if len(pts_left) > 1:
+                self.canvas.create_line(pts_left, fill=contrast_color, width=base_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+                self.canvas.create_line(pts_left, fill=color, width=top_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+
+            # --- Bordure DROITE ---
+            pts_right = []
+            for i in range(self.size):
+                x, y = self.get_hex_coords(i, self.size-1)
+                for i_ang in [0, 1, 2]: # Sommets de droite
+                    angle = math.radians(60 * i_ang - 30)
+                    pts_right.extend([x + self.cell_radius * math.cos(angle), y + self.cell_radius * math.sin(angle)])
+            
+            if len(pts_right) > 1:
+                self.canvas.create_line(pts_right, fill=contrast_color, width=base_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
+                self.canvas.create_line(pts_right, fill=color, width=top_width, capstyle=tk.ROUND, joinstyle=tk.ROUND)
 
     def on_click(self, event):
         if self.game_over: return
@@ -168,41 +255,70 @@ class HexGame:
             self.info_label.config(text=f"Tour : {p_name}")
 
     def ai_play(self):
+        if self.game_over: return
+        
+        # 1. Lister toutes les cases vides
         empty = list(zip(*np.where(self.board == 0)))
         if not empty: return
 
-        move = None
-        # Mode INTERMEDIAIRE / AVANCE : Blocage et Victoire immédiate
-        if self.mode in ["intermediaire", "avance"]:
-            for p in [1, 2]:
-                for r, c in empty:
-                    self.board[r, c] = p
-                    if self.check_winner(p):
-                        self.board[r, c] = 0
-                        move = (r, c)
-                        break
-                    self.board[r, c] = 0
-                if move: break
+        best_move = None
 
-        # Mode DEBUTANT ou pas de coup critique : Modèle RF
-        if not move and self.model:
-            states = []
+        # --- ÉTAPE A : L'HEURISTIQUE (Le "Réflexe de survie") ---
+        # Priorité 1 : Est-ce que l'IA peut gagner TOUT DE SUITE ?
+        for r, c in empty:
+            self.board[r, c] = 1 # On simule le coup de l'IA (Bleu)
+            if self.check_winner(1):
+                best_move = (r, c)
+                self.board[r, c] = 0 # On remet à zéro après simulation
+                break
+            self.board[r, c] = 0 # On remet à zéro
+
+        # Priorité 2 : Si l'IA ne peut pas gagner, doit-elle BLOQUER le joueur ?
+        if not best_move:
             for r, c in empty:
-                self.board[r, c] = 1
-                enc = []
-                for v in self.board.flatten():
-                    if v == 1: enc.extend([1, 0])
-                    elif v == 2: enc.extend([0, 1])
-                    else: enc.extend([0, 0])
-                states.append(enc)
+                self.board[r, c] = 2 # On simule le coup du Joueur (Rouge)
+                if self.check_winner(2):
+                    best_move = (r, c)
+                    self.board[r, c] = 0
+                    break
                 self.board[r, c] = 0
-            
-            X = np.array(states, dtype=np.float32)
-            probs = self.model.predict_proba(X)[:, 1]
-            move = empty[np.argmax(probs)]
-        
-        if not move: move = random.choice(empty)
-        self.execute_turn(move[0], move[1])
+
+        # --- ÉTAPE B : LE MODÈLE RF (La "Stratégie globale") ---
+        # Si aucune urgence (victoire/blocage), on demande au Random Forest
+        if not best_move and self.model:
+            try:
+                states = []
+                for r, c in empty:
+                    # Simulation du futur plateau pour chaque coup possible
+                    self.board[r, c] = 1
+                    # Encodage conforme à l'entraînement (one-hot)
+                    enc = []
+                    for v in self.board.flatten():
+                        if v == 1: enc.extend([1, 0])   # Bleu
+                        elif v == 2: enc.extend([0, 1]) # Rouge
+                        else: enc.extend([0, 0])        # Vide
+                    states.append(enc)
+                    self.board[r, c] = 0
+                
+                # Conversion NumPy type float32 (essentiel pour sklearn)
+                X = np.array(states, dtype=np.float32)
+                
+                # Récupération des probabilités de victoire (classe 1)
+                probs = self.model.predict_proba(X)[:, 1]
+                
+                # On prend le coup qui a la plus haute probabilité de victoire
+                best_idx = np.argmax(probs)
+                best_move = empty[best_idx]
+            except Exception as e:
+                print(f"Erreur prédiction RF : {e}")
+                best_move = random.choice(empty)
+
+        # Sécurité finale si le modèle échoue
+        if not best_move:
+            best_move = random.choice(empty)
+
+        # Exécution du meilleur coup trouvé
+        self.execute_turn(best_move[0], best_move[1])
 
     def check_winner(self, player):
         visited, q = set(), []
